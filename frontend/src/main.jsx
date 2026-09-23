@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Download, FileText, ImagePlus, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { AlignmentType, Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, HeadingLevel, ImageRun, Packer, Paragraph, TextRun } from "docx";
 import "./index.css";
 import "./App.css";
 
@@ -199,6 +199,7 @@ function App() {
           <p className="local-note">Todo se procesa en tu navegador. No se guardan datos en una base de datos.</p>
         </section>
       </main>
+      <footer className="site-footer">Autor: Alexis Afonso | Ayudante Tecnico La Pampa</footer>
     </div>
   );
 }
@@ -350,21 +351,7 @@ async function buildWordDocument(data) {
       );
     }
   }
-  return new Document({
-    sections: [{
-      children,
-      footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
-              children: [new TextRun({ text: "Autor: Alexis Afonso | Ayudante Tecnico La Pampa", size: 18 })],
-              alignment: AlignmentType.CENTER,
-            }),
-          ],
-        }),
-      },
-    }],
-  });
+  return new Document({ sections: [{ children }] });
 }
 
 createRoot(document.getElementById("root")).render(<App />);

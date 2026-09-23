@@ -282,18 +282,33 @@ function getImageSize(dataUrl) {
 
 async function buildWordDocument(data) {
   const children = [];
+  const contentFields = [
+    ["Título del caso", data.title],
+    ["Descripción", data.description],
+    ["Requisito", data.requirement],
+    ["Objetivo", data.objective],
+    ["Precondiciones", data.preconditions],
+    ["Datos de prueba", data.testData],
+    ["Responsable", data.owner],
+    ["Tester", data.tester],
+  ];
+
+  children.push(new Paragraph({
+    text: "Contenido del template",
+    heading: HeadingLevel.HEADING_1,
+    spacing: { after: 140 },
+  }));
+
   if (nonEmpty(data.title)) {
-    children.push(new Paragraph({ text: data.title.trim(), heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }));
-  }
-  if (nonEmpty(data.description)) {
-    children.push(new Paragraph({ text: data.description.trim(), spacing: { after: 220 } }));
+    children.push(new Paragraph({
+      text: data.title.trim(),
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 180 },
+    }));
   }
 
-  const fields = [
-    ["Requisito", data.requirement], ["Objetivo", data.objective],
-    ["Precondiciones", data.preconditions], ["Datos de prueba", data.testData],
-    ["Responsable", data.owner], ["Tester", data.tester],
-  ].filter(([, value]) => nonEmpty(value));
+  const fields = contentFields.filter(([label, value]) => label !== "Título del caso" && nonEmpty(value));
   if (fields.length > 0) {
     children.push(new Table({
       rows: fields.map(([label, value]) => new TableRow({
@@ -310,7 +325,16 @@ async function buildWordDocument(data) {
     nonEmpty(step.result) || step.images?.length > 0,
   );
   if (steps.length > 0) {
-    children.push(new Paragraph({ text: "Pasos de prueba", heading: HeadingLevel.HEADING_1, spacing: { before: 260, after: 140 } }));
+    children.push(new Paragraph({
+      text: "Ejecución",
+      heading: HeadingLevel.HEADING_1,
+      spacing: { before: 300, after: 140 },
+    }));
+    children.push(new Paragraph({
+      text: "Pasos de prueba",
+      heading: HeadingLevel.HEADING_2,
+      spacing: { after: 140 },
+    }));
   }
   for (const [index, step] of steps.entries()) {
     children.push(new Paragraph({

@@ -89,7 +89,7 @@ function App() {
   const downloadWord = async () => {
     setDownloading(true);
     try {
-      const doc = buildWordDocument(template);
+      const doc = await buildWordDocument(template);
       const blob = await Packer.toBlob(doc);
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement("a");
@@ -251,46 +251,90 @@ function dataUrlToBytes(dataUrl) {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
+function nonEmpty(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 function wordText(label, value) {
+  if (!nonEmpty(value)) return null;
   return new Paragraph({
-    children: [new TextRun({ text: `${label}: `, bold: true }), new TextRun(value?.trim() || "Pendiente de completar")],
+    children: [new TextRun({ text: `${label}: `, bold: true }), new TextRun(value.trim())],
     spacing: { after: 120 },
   });
 }
 
-function buildWordDocument(data) {
-  const text = (value) => value?.trim() || "Pendiente de completar";
-  const children = [
-    new Paragraph({ text: text(data.title), heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }),
-    new Paragraph({ text: text(data.description), spacing: { after: 220 } }),
-    new Table({
-      rows: [
-        ["Requisito", data.requirement], ["Objetivo", data.objective],
-        ["Precondiciones", data.preconditions], ["Datos de prueba", data.testData],
-        ["Responsable", data.owner], ["Tester", data.tester],
-      ].map(([label, value]) => new TableRow({
+function getImageSize(dataUrl) {
+  return new Promise((resolve) => {
+    const image = new window.Image();
+    image.onload = () => {
+      const maxWidth = 600;
+      const maxHeight = 700;
+      const scale = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+      resolve({
+        width: Math.max(1, Math.round(image.naturalWidth * scale)),
+        height: Math.max(1, Math.round(image.naturalHeight * scale)),
+      });
+    };
+    image.onerror = () => resolve({ width: 600, height: 400 });
+    image.src = dataUrl;
+  });
+}
+
+async function buildWordDocument(data) {
+  const children = [];
+  if (nonEmpty(data.title)) {
+    children.push(new Paragraph({ text: data.title.trim(), heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }));
+  }
+  if (nonEmpty(data.description)) {
+    children.push(new Paragraph({ text: data.description.trim(), spacing: { after: 220 } }));
+  }
+
+  const fields = [
+    ["Requisito", data.requirement], ["Objetivo", data.objective],
+    ["Precondiciones", data.preconditions], ["Datos de prueba", data.testData],
+    ["Responsable", data.owner], ["Tester", data.tester],
+  ].filter(([, value]) => nonEmpty(value));
+  if (fields.length > 0) {
+    children.push(new Table({
+      rows: fields.map(([label, value]) => new TableRow({
         children: [
           new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })] })] }),
-          new TableCell({ children: [new Paragraph(text(value))] }),
+          new TableCell({ children: [new Paragraph(value.trim())] }),
         ],
       })),
-    }),
-    new Paragraph({ text: "Pasos de prueba", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
-  ];
-  data.steps.forEach((step, index) => {
-    children.push(
-      new Paragraph({ text: `${index + 1}. ${text(step.title)}`, heading: HeadingLevel.HEADING_2 }),
-      wordText("Acción", step.action), wordText("Resultado esperado", step.expected),
-      wordText("Resultado obtenido", step.result),
-    );
-    (step.images || []).forEach((image) => children.push(
-      new Paragraph({ text: `Evidencia: ${image.name}` }),
-      new Paragraph({
-        children: [new ImageRun({ data: dataUrlToBytes(image.dataUrl), transformation: { width: 520, height: 320 } })],
-        alignment: AlignmentType.CENTER,
-      }),
-    ));
-  });
+    }));
+  }
+
+  const steps = data.steps.filter((step) =>
+    nonEmpty(step.title) || nonEmpty(step.action) || nonEmpty(step.expected) ||
+    nonEmpty(step.result) || step.images?.length > 0,
+  );
+  if (steps.length > 0) {
+    children.push(new Paragraph({ text: "Pasos de prueba", heading: HeadingLevel.HEADING_1, spacing: { before: 260, after: 140 } }));
+  }
+  for (const [index, step] of steps.entries()) {
+    children.push(new Paragraph({
+      text: `${index + 1}. ${nonEmpty(step.title) ? step.title.trim() : "Paso"}`,
+      heading: HeadingLevel.HEADING_2,
+    }));
+    [wordText("Acción", step.action), wordText("Resultado esperado", step.expected), wordText("Resultado obtenido", step.result)]
+      .filter(Boolean)
+      .forEach((paragraph) => children.push(paragraph));
+    for (const image of step.images || []) {
+      const size = await getImageSize(image.dataUrl);
+      children.push(
+        new Paragraph({ text: `Evidencia: ${image.name}`, spacing: { before: 100, after: 80 } }),
+        new Paragraph({
+          children: [new ImageRun({
+            data: dataUrlToBytes(image.dataUrl),
+            transformation: size,
+            type: image.dataUrl.match(/^data:image\/([^;]+)/)?.[1] || "png",
+          })],
+          alignment: AlignmentType.CENTER,
+        }),
+      );
+    }
+  }
   return new Document({ sections: [{ children }] });
 }
 

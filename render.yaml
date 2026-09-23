@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: qa-evidence-api
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    disk:
+      name: qa-evidence-uploads
+      mountPath: /opt/render/project/src/backend/uploads
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: qa-evidence-db
+          property: connectionString
+  - type: web
+    name: qa-evidence-web
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: qa-evidence-api
+          property: host
+
+databases:
+  - name: qa-evidence-db
+    databaseName: qa_evidence
+    user: qa_evidence
+    plan: free

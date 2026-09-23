@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Download, FileText, ImagePlus, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { AlignmentType, Document, HeadingLevel, ImageRun, Packer, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, TextRun } from "docx";
 import "./index.css";
 import "./App.css";
 
@@ -350,7 +350,21 @@ async function buildWordDocument(data) {
       );
     }
   }
-  return new Document({ sections: [{ children }] });
+  return new Document({
+    sections: [{
+      children,
+      footers: {
+        default: new Footer({
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: "Autor: Alexis Afonso | Ayudante Tecnico La Pampa", size: 18 })],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+      },
+    }],
+  });
 }
 
 createRoot(document.getElementById("root")).render(<App />);

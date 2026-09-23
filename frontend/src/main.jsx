@@ -1,33 +1,196 @@
-import React, {useEffect, useState} from "react";
-import {createRoot} from "react-dom/client";
-import axios from "axios";
-import {BrowserRouter, Link, Routes, Route} from "react-router-dom";
-import {ClipboardCheck, Plus, Download, Trash2, Copy, ImagePlus} from "lucide-react";
-import {motion} from "framer-motion";
-import {BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip} from "recharts";
+import React, { useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { Download, FileText, Plus, RotateCcw, Trash2 } from "lucide-react";
 import "./index.css";
 import "./App.css";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const emptyStep = () => ({title:"", expected_result:"", actual_result:"", status:"Not run", evidences:[]});
+const initialStep = () => ({
+  title: "",
+  action: "",
+  expected: "",
+  result: "",
+});
+
+const initialTemplate = {
+  title: "",
+  description: "",
+  requirement: "",
+  objective: "",
+  preconditions: "",
+  testData: "",
+  owner: "",
+  tester: "",
+  steps: [initialStep()],
+};
 
 function App() {
-  const [cases,setCases]=useState([]), [selected,setSelected]=useState(null), [editing,setEditing]=useState(false), [loading,setLoading]=useState(true), [metrics,setMetrics]=useState(null);
-  const load=()=>Promise.all([axios.get(`${API}/api/cases`),axios.get(`${API}/api/dashboard`)]).then(([a,b])=>{setCases(a.data);setMetrics(b.data);if(selected)setSelected(a.data.find(c=>c.id===selected.id)||null)}).finally(()=>setLoading(false));
-  useEffect(load,[]);
-  const save=async data=>{await axios({url:`${API}/api/cases${data.id?`/${data.id}`:""}`,method:data.id?"PUT":"POST",data});setEditing(false);setSelected(null);load()};
-  const remove=async id=>{if(confirm("Delete this case?")){await axios.delete(`${API}/api/cases/${id}`);setSelected(null);load()}};
-  const clone=async id=>{const r=await axios.post(`${API}/api/cases/${id}/clone`);setSelected(r.data);load()};
-  return <div className="min-h-screen">
-    <header className="bg-slate-900 text-white px-8 py-5 flex justify-between"><h1 className="text-xl font-bold flex gap-2 items-center"><ClipboardCheck/> QA Evidence Hub</h1><button onClick={()=>{setSelected({title:"",description:"",status:"Draft",owner:"",requirement:"",objective:"",preconditions:"",test_data:"",tester:"",reviewer:"",steps:[]});setEditing(true)}} className="bg-indigo-500 px-4 py-2 rounded-lg"><Plus className="inline"/> New case</button></header>
-    <main className="max-w-7xl mx-auto p-8 grid lg:grid-cols-[300px_1fr] gap-8">
-      <aside><div className="flex justify-between mb-3"><h2 className="font-semibold">Test cases</h2><span className="text-slate-500">{cases.length}</span></div>{loading?<p>Loading…</p>:cases.map(c=><button key={c.id} onClick={()=>{setSelected(c);setEditing(false)}} className={`block text-left w-full p-3 rounded-lg mb-2 ${selected?.id===c.id?"bg-indigo-100 border-indigo-300":"bg-white border"} border`}><div className="font-medium">{c.title}</div><div className="text-xs text-slate-500 mt-1">{c.status} · {c.steps.length} steps</div></button>)}</aside>
-      <section>{editing?<Editor initial={selected} onSave={save} onCancel={()=>{setEditing(false);setSelected(null)}}/>:selected?<Detail item={selected} onEdit={()=>setEditing(true)} onDelete={()=>remove(selected.id)} onClone={()=>clone(selected.id)}/>:<Dashboard metrics={metrics}/>}</section>
-    </main>
-  </div>
+  const [template, setTemplate] = useState(initialTemplate);
+
+  const update = (field, value) =>
+    setTemplate((current) => ({ ...current, [field]: value }));
+
+  const updateStep = (index, field, value) =>
+    setTemplate((current) => ({
+      ...current,
+      steps: current.steps.map((step, stepIndex) =>
+        stepIndex === index ? { ...step, [field]: value } : step,
+      ),
+    }));
+
+  const addStep = () =>
+    setTemplate((current) => ({ ...current, steps: [...current.steps, initialStep()] }));
+
+  const removeStep = (index) =>
+    setTemplate((current) => ({
+      ...current,
+      steps:
+        current.steps.length === 1
+          ? [initialStep()]
+          : current.steps.filter((_, stepIndex) => stepIndex !== index),
+    }));
+
+  const reset = () => setTemplate(initialTemplate);
+
+  const markdown = useMemo(() => buildMarkdown(template), [template]);
+
+  const download = (content, filename, type) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="hero">
+        <div>
+          <span className="eyebrow">QA TOOLKIT · LOCAL</span>
+          <h1>Template Generator</h1>
+          <p>Diseña un caso de prueba completo y descarga una plantilla lista para compartir.</p>
+        </div>
+        <FileText size={42} strokeWidth={1.5} />
+      </header>
+
+      <main className="workspace">
+        <section className="panel editor-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="section-label">01 · Contenido</span>
+              <h2>Define tu template</h2>
+            </div>
+            <button className="button button-ghost" onClick={reset} type="button">
+              <RotateCcw size={16} /> Limpiar
+            </button>
+          </div>
+
+          <div className="field-grid">
+            <Field label="Título del caso" wide value={template.title} onChange={(value) => update("title", value)} placeholder="Ej. Inicio de sesión válido" />
+            <Field label="Descripción" wide multiline value={template.description} onChange={(value) => update("description", value)} placeholder="Describe brevemente qué valida este caso..." />
+            <Field label="Requisito" multiline value={template.requirement} onChange={(value) => update("requirement", value)} placeholder="REQ-001..." />
+            <Field label="Objetivo" multiline value={template.objective} onChange={(value) => update("objective", value)} placeholder="Qué debe comprobarse" />
+            <Field label="Precondiciones" multiline value={template.preconditions} onChange={(value) => update("preconditions", value)} placeholder="Configuración necesaria antes de ejecutar" />
+            <Field label="Datos de prueba" multiline value={template.testData} onChange={(value) => update("testData", value)} placeholder="Usuarios, valores o archivos necesarios" />
+            <Field label="Responsable" value={template.owner} onChange={(value) => update("owner", value)} placeholder="Equipo o persona" />
+            <Field label="Tester" value={template.tester} onChange={(value) => update("tester", value)} placeholder="Nombre del tester" />
+          </div>
+
+          <div className="steps-heading">
+            <div>
+              <span className="section-label">02 · Ejecución</span>
+              <h2>Pasos de prueba</h2>
+            </div>
+            <button className="button button-secondary" onClick={addStep} type="button">
+              <Plus size={16} /> Agregar paso
+            </button>
+          </div>
+
+          <div className="steps-list">
+            {template.steps.map((step, index) => (
+              <article className="step-card" key={index}>
+                <div className="step-number">{String(index + 1).padStart(2, "0")}</div>
+                <div className="step-fields">
+                  <Field label="Nombre del paso" value={step.title} onChange={(value) => updateStep(index, "title", value)} placeholder="Ej. Abrir la pantalla de acceso" />
+                  <Field label="Acción" multiline value={step.action} onChange={(value) => updateStep(index, "action", value)} placeholder="Qué debe hacer el tester" />
+                  <Field label="Resultado esperado" multiline value={step.expected} onChange={(value) => updateStep(index, "expected", value)} placeholder="Qué debería ocurrir" />
+                  <Field label="Resultado obtenido" multiline value={step.result} onChange={(value) => updateStep(index, "result", value)} placeholder="Completar durante la ejecución" />
+                </div>
+                <button className="icon-button" onClick={() => removeStep(index)} type="button" aria-label={`Eliminar paso ${index + 1}`}>
+                  <Trash2 size={17} />
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel preview-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="section-label">03 · Resultado</span>
+              <h2>Vista previa</h2>
+            </div>
+            <div className="download-actions">
+              <button className="button button-secondary" onClick={() => download(markdown, "template-qa.md", "text/markdown")} type="button">
+                <Download size={16} /> Markdown
+              </button>
+              <button className="button button-primary" onClick={() => download(JSON.stringify(template, null, 2), "template-qa.json", "application/json")} type="button">
+                <Download size={16} /> JSON
+              </button>
+            </div>
+          </div>
+          <div className="preview">
+            <pre>{markdown}</pre>
+          </div>
+          <p className="local-note">Todo se procesa en tu navegador. No se guardan datos en una base de datos.</p>
+        </section>
+      </main>
+    </div>
+  );
 }
-function Dashboard({metrics}){let data=metrics?Object.entries(metrics.by_status).map(([status,count])=>({status,count})):[];return <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}><h2 className="text-2xl font-bold mb-5">QA dashboard</h2><div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">{[['Cases',metrics?.total],['Steps',metrics?.steps],['Evidence',metrics?.evidence],['Passed',metrics?.by_status?.Passed]].map(x=><div className="bg-white border rounded-xl p-4" key={x[0]}><div className="text-slate-500 text-sm">{x[0]}</div><div className="text-3xl font-bold mt-1">{x[1]??0}</div></div>)}</div><div className="bg-white border rounded-xl p-5 h-72"><ResponsiveContainer><BarChart data={data}><XAxis dataKey="status"/><YAxis allowDecimals={false}/><Tooltip/><Bar dataKey="count" fill="#4f46e5" radius={[5,5,0,0]}/></BarChart></ResponsiveContainer></div></motion.div>}
-function Detail({item,onEdit,onDelete,onClone}){return <div className="space-y-5"><div className="flex justify-between items-start"><div><h2 className="text-2xl font-bold">{item.title}</h2><p className="text-slate-500 mt-1">{item.description}</p><div className="grid md:grid-cols-2 gap-2 mt-3 text-sm">{["requirement","objective","preconditions","test_data","tester","reviewer"].map(k=>item[k]&&<div key={k}><b>{k.replace("_"," ")}:</b> {item[k]}</div>)}</div><span className="inline-block mt-3 bg-slate-100 px-3 py-1 rounded-full text-sm">{item.status} · {item.owner||"Unassigned"}</span></div><div className="flex gap-2"><button onClick={onEdit} className="px-3 py-2 border rounded-lg">Edit</button><button onClick={onClone} className="px-3 py-2 border rounded-lg"><Copy size={16}/></button><a href={`${API}/api/cases/${item.id}/report`} className="px-3 py-2 bg-indigo-600 text-white rounded-lg"><Download className="inline" size={16}/> DOCX</a><button onClick={onDelete} className="px-3 py-2 text-red-600"><Trash2/></button></div></div>{item.steps.map((s,i)=><div className="bg-white border rounded-xl p-5" key={s.id||i}><div className="flex justify-between"><h3 className="font-semibold">{i+1}. {s.title}</h3><span className="text-sm">{s.status}</span></div><div className="grid md:grid-cols-2 gap-4 mt-4 text-sm"><div><b>Expected</b><p className="text-slate-600 whitespace-pre-wrap">{s.expected_result||"—"}</p></div><div><b>Actual</b><p className="text-slate-600 whitespace-pre-wrap">{s.actual_result||"—"}</p></div></div>{s.evidences?.length>0&&<div className="mt-4"><b className="text-sm">Evidence</b>{s.evidences.map(e=>{const href=e.url?.startsWith("http")?e.url:`${API}${e.url||e.file_path}`;return <a className="block text-indigo-600 text-sm mt-1" href={href} target="_blank" key={e.id||e.name}>↗ {e.name} {e.file_size?`(${Math.round(e.file_size/1024)} KB)`:""}</a>})}</div>}</div>)}</div>}
-function Editor({initial,onSave,onCancel}){const [form,setForm]=useState({...initial,steps:initial.steps?.map(s=>({...s,evidences:s.evidences||[]}))||[]});const set=(k,v)=>setForm({...form,[k]:v});const update=(i,k,v)=>set("steps",form.steps.map((s,j)=>j===i?{...s,[k]:v}:s));const upload=async(i,ei,file)=>{const data=new FormData();data.append("file",file);const r=await axios.post(`${API}/api/evidence/upload`,data);const es=form.steps[i].evidences.map((z,k)=>k===ei?{...z,...r.data,name:z.name||r.data.file_name}:z);update(i,"evidences",es)};const fields=["requirement","objective","preconditions","test_data","tester","reviewer"];return <div className="bg-white border rounded-xl p-6"><div className="flex justify-between mb-6"><h2 className="text-2xl font-bold">{form.id?"Edit case":"New case"}</h2><button onClick={onCancel}>✕</button></div><div className="grid md:grid-cols-2 gap-4"><label>Title<input value={form.title} onChange={e=>set("title",e.target.value)} className="input"/></label><label>Owner<input value={form.owner||""} onChange={e=>set("owner",e.target.value)} className="input"/></label><label>Status<select value={form.status} onChange={e=>set("status",e.target.value)} className="input"><option>Draft</option><option>In progress</option><option>Passed</option><option>Failed</option></select></label><label>Description<textarea value={form.description||""} onChange={e=>set("description",e.target.value)} className="input"/></label>{fields.map(k=><label key={k}>{k.replace("_"," ")}<textarea value={form[k]||""} onChange={e=>set(k,e.target.value)} className="input"/></label>)}</div><div className="flex justify-between mt-8 mb-3"><h3 className="font-semibold">Steps & evidence</h3><button onClick={()=>set("steps",[...form.steps,emptyStep()])} className="text-indigo-600">+ Add step</button></div>{form.steps.map((s,i)=><div className="border rounded-lg p-4 mb-3" key={i}><div className="grid md:grid-cols-2 gap-3"><input placeholder="Step title" value={s.title} onChange={e=>update(i,"title",e.target.value)} className="input"/><select value={s.status} onChange={e=>update(i,"status",e.target.value)} className="input"><option>Not run</option><option>Passed</option><option>Failed</option><option>Blocked</option></select><textarea placeholder="Expected result" value={s.expected_result} onChange={e=>update(i,"expected_result",e.target.value)} className="input"/><textarea placeholder="Actual result" value={s.actual_result} onChange={e=>update(i,"actual_result",e.target.value)} className="input"/></div><div className="mt-3">{s.evidences.map((e,ei)=><div className="flex gap-2 mt-2 items-center" key={ei}><input placeholder="Evidence name" value={e.name} onChange={x=>{const es=s.evidences.map((z,k)=>k===ei?{...z,name:x.target.value}:z);update(i,"evidences",es)}} className="input"/><input placeholder="URL" value={e.url} onChange={x=>{const es=s.evidences.map((z,k)=>k===ei?{...z,url:x.target.value}:z);update(i,"evidences",es)}} className="input"/><label className="p-2 border rounded"><ImagePlus size={18}/><input type="file" accept="image/*" hidden onChange={x=>upload(i,ei,x.target.files[0])}/></label></div>)}<button onClick={()=>update(i,"evidences",[...s.evidences,{name:"",url:"",notes:""}])} className="text-sm text-indigo-600 mt-2">+ Add evidence</button></div></div>)}<div className="flex justify-end gap-3 mt-6"><button onClick={onCancel} className="px-4 py-2 border rounded-lg">Cancel</button><button onClick={()=>onSave(form)} disabled={!form.title} className="px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:opacity-40">Save case</button></div></div>}
-function Routed(){return <BrowserRouter><Routes><Route path="*" element={<App/>}/></Routes></BrowserRouter>}
-export default Routed;
+
+function Field({ label, value, onChange, placeholder, multiline = false, wide = false }) {
+  const commonProps = {
+    value,
+    onChange: (event) => onChange(event.target.value),
+    placeholder,
+  };
+  return (
+    <label className={`field ${wide ? "field-wide" : ""}`}>
+      <span>{label}</span>
+      {multiline ? <textarea {...commonProps} rows={3} /> : <input {...commonProps} />}
+    </label>
+  );
+}
+
+function buildMarkdown(data) {
+  const value = (text) => text?.trim() || "Pendiente de completar";
+  const steps = data.steps
+    .map(
+      (step, index) =>
+        `### ${index + 1}. ${value(step.title)}\n\n**Acción**\n${value(step.action)}\n\n**Resultado esperado**\n${value(step.expected)}\n\n**Resultado obtenido**\n${value(step.result)}`,
+    )
+    .join("\n\n");
+
+  return `# ${value(data.title)}
+
+## Descripción
+${value(data.description)}
+
+| Campo | Detalle |
+| --- | --- |
+| Requisito | ${value(data.requirement)} |
+| Objetivo | ${value(data.objective)} |
+| Precondiciones | ${value(data.preconditions)} |
+| Datos de prueba | ${value(data.testData)} |
+| Responsable | ${value(data.owner)} |
+| Tester | ${value(data.tester)} |
+
+## Pasos de prueba
+
+${steps}
+`;
+}
+
+createRoot(document.getElementById("root")).render(<App />);

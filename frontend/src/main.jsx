@@ -258,7 +258,10 @@ function nonEmpty(value) {
 function wordText(label, value) {
   if (!nonEmpty(value)) return null;
   return new Paragraph({
-    text: `${label}: ${value.trim()}`,
+    children: [
+      new TextRun({ text: `${label}: `, bold: true }),
+      new TextRun({ text: value.trim() }),
+    ],
     spacing: { after: 140 },
   });
 }
@@ -302,9 +305,8 @@ async function buildWordDocument(data) {
   ].filter(Boolean);
   if (contentParagraphs.length > 0) {
     children.push(new Paragraph({
-      text: "Contenido del template",
-      heading: HeadingLevel.HEADING_1,
-      spacing: { before: 140, after: 140 },
+      children: [new TextRun({ text: "DATOS DEL CASO", bold: true, size: 28 })],
+      spacing: { before: 160, after: 180 },
     }));
     children.push(...contentParagraphs);
   }

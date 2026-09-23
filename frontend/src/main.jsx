@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Download, FileText, ImagePlus, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { AlignmentType, Document, HeadingLevel, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx";
+import { AlignmentType, Document, HeadingLevel, ImageRun, Packer, Paragraph, TextRun } from "docx";
 import "./index.css";
 import "./App.css";
 
@@ -282,23 +282,6 @@ function getImageSize(dataUrl) {
 
 async function buildWordDocument(data) {
   const children = [];
-  const contentFields = [
-    ["Título del caso", data.title],
-    ["Descripción", data.description],
-    ["Requisito", data.requirement],
-    ["Objetivo", data.objective],
-    ["Precondiciones", data.preconditions],
-    ["Datos de prueba", data.testData],
-    ["Responsable", data.owner],
-    ["Tester", data.tester],
-  ];
-
-  children.push(new Paragraph({
-    text: "Contenido del template",
-    heading: HeadingLevel.HEADING_1,
-    spacing: { after: 140 },
-  }));
-
   if (nonEmpty(data.title)) {
     children.push(new Paragraph({
       text: data.title.trim(),
@@ -308,16 +291,22 @@ async function buildWordDocument(data) {
     }));
   }
 
-  const fields = contentFields.filter(([label, value]) => label !== "Título del caso" && nonEmpty(value));
-  if (fields.length > 0) {
-    children.push(new Table({
-      rows: fields.map(([label, value]) => new TableRow({
-        children: [
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })] })] }),
-          new TableCell({ children: [new Paragraph(value.trim())] }),
-        ],
-      })),
+  const contentParagraphs = [
+    wordText("Descripción", data.description),
+    wordText("Requisito", data.requirement),
+    wordText("Objetivo", data.objective),
+    wordText("Precondiciones", data.preconditions),
+    wordText("Datos de prueba", data.testData),
+    wordText("Responsable", data.owner),
+    wordText("Tester", data.tester),
+  ].filter(Boolean);
+  if (contentParagraphs.length > 0) {
+    children.push(new Paragraph({
+      text: "Contenido del template",
+      heading: HeadingLevel.HEADING_1,
+      spacing: { before: 140, after: 140 },
     }));
+    children.push(...contentParagraphs);
   }
 
   const steps = data.steps.filter((step) =>

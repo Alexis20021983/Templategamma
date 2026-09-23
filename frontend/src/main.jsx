@@ -258,8 +258,8 @@ function nonEmpty(value) {
 function wordText(label, value) {
   if (!nonEmpty(value)) return null;
   return new Paragraph({
-    children: [new TextRun({ text: `${label}: `, bold: true }), new TextRun(value.trim())],
-    spacing: { after: 120 },
+    text: `${label}: ${value.trim()}`,
+    spacing: { after: 140 },
   });
 }
 

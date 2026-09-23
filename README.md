@@ -13,8 +13,10 @@ npm run dev
 ```
 
 La aplicación procesa todo en el navegador. Permite descargar el template
-generado como `template-qa.md` o `template-qa.json`; ningún dato se envía ni se
-guarda en una base de datos.
+generado como Word (`template-qa.docx`), Markdown (`template-qa.md`) o JSON
+(`template-qa.json`). También puedes adjuntar una o varias imágenes a cada paso;
+las imágenes se incrustan en el archivo Word. Ningún dato se envía ni se guarda
+en una base de datos.
 
 ## Despliegue
 

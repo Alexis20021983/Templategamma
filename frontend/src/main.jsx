@@ -5,6 +5,47 @@ import { AlignmentType, Document, HeadingLevel, ImageRun, Packer, Paragraph, Tex
 import "./index.css";
 import "./App.css";
 
+const localities = [
+  "25 de Mayo",
+  "Alta Italia",
+  "Alpachiri",
+  "Anguil",
+  "Arata",
+  "Bernardo Larroudé",
+  "Bernasconi",
+  "Caleufú",
+  "Catriló",
+  "Colonia Barón",
+  "Conheló",
+  "Doblas",
+  "Eduardo Castex",
+  "Embajador Martini",
+  "General Acha",
+  "General Campos",
+  "General Pico",
+  "Guatraché",
+  "Ingeniero Luiggi",
+  "Intendente Alvear",
+  "Jacinto Arauz",
+  "La Adela",
+  "La Maruja",
+  "Lonquimay",
+  "Macachín",
+  "Miguel Riglos",
+  "Parera",
+  "Quemú Quemú",
+  "Rancul",
+  "Realicó",
+  "Rolón",
+  "San Martín",
+  "Santa Isabel",
+  "Toay",
+  "Trenel",
+  "Uriburu",
+  "Victorica",
+  "Winifreda",
+];
+
 const initialStep = () => ({
   title: "",
   action: "",
@@ -27,7 +68,7 @@ const initialTemplate = {
 
 const initialTripLog = {
   title: "Bitácora de viaje",
-  destination: "",
+  destination: [],
   salesforceCases: "",
   travelDate: "",
   fuelReceiptDate: "",
@@ -200,7 +241,10 @@ function App() {
           </div> : <>
             <div className="field-grid">
               <Field label="Título" wide value={tripLog.title} onChange={(value) => update("title", value)} placeholder="Bitácora de viaje" />
-              <Field label="Destino" value={tripLog.destination} onChange={(value) => update("destination", value)} placeholder="Ciudad o lugar" />
+              <LocalityPicker
+                value={tripLog.destination}
+                onChange={(value) => update("destination", value)}
+              />
               <Field label="Fecha del viaje" type="date" value={tripLog.travelDate} onChange={(value) => update("travelDate", value)} />
               <Field label="Casos de Salesforce" wide multiline value={tripLog.salesforceCases} onChange={(value) => update("salesforceCases", value)} placeholder="Números o detalles de los casos relacionados" />
             </div>
@@ -329,6 +373,60 @@ function Field({ label, value, onChange, placeholder, type = "text", multiline =
   );
 }
 
+function LocalityPicker({ value, onChange }) {
+  const selectedLocalities = Array.isArray(value) ? value : value ? [value] : [];
+
+  const toggleLocality = (locality) => {
+    onChange(
+      selectedLocalities.includes(locality)
+        ? selectedLocalities.filter((item) => item !== locality)
+        : [...selectedLocalities, locality],
+    );
+  };
+
+  return (
+    <div className="field field-wide">
+      <span id="locality-picker-label">Localidades del recorrido</span>
+      <details className="locality-dropdown">
+        <summary aria-labelledby="locality-picker-label">
+          {selectedLocalities.length > 0
+            ? `${selectedLocalities.length} ${selectedLocalities.length === 1 ? "localidad seleccionada" : "localidades seleccionadas"}`
+            : "Selecciona una o varias localidades"}
+        </summary>
+        <div className="locality-options">
+          {localities.map((locality) => (
+            <label className="locality-option" key={locality}>
+              <input
+                type="checkbox"
+                checked={selectedLocalities.includes(locality)}
+                onChange={() => toggleLocality(locality)}
+              />
+              <span>{locality}</span>
+            </label>
+          ))}
+        </div>
+      </details>
+      {selectedLocalities.length > 0 && (
+        <ol className="selected-localities" aria-label="Orden del recorrido">
+          {selectedLocalities.map((locality, index) => (
+            <li className="selected-locality" key={locality}>
+              <span className="locality-position">{index + 1}</span>
+              <span>{locality}</span>
+              <button
+                type="button"
+                onClick={() => toggleLocality(locality)}
+                aria-label={`Quitar ${locality} del recorrido`}
+              >
+                <Trash2 size={14} />
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 function buildMarkdown(data) {
   const value = (text) => text?.trim() || "Pendiente de completar";
   const steps = data.steps
@@ -360,6 +458,9 @@ ${steps}
 
 function buildTripLogMarkdown(data) {
   const value = (text) => text?.trim() || "Pendiente de completar";
+  const destination = Array.isArray(data.destination)
+    ? data.destination.join(" → ") || "Pendiente de completar"
+    : value(data.destination);
   const receiptImages = data.fuelReceiptImages
     .map((image) => `- ${image.name}`)
     .join("\n") || "Sin imágenes cargadas";
@@ -370,7 +471,7 @@ function buildTripLogMarkdown(data) {
 
 | Campo | Detalle |
 | --- | --- |
-| Destino | ${value(data.destination)} |
+| Localidades del recorrido | ${destination} |
 | Fecha del viaje | ${value(data.travelDate)} |
 | Casos de Salesforce | ${value(data.salesforceCases)} |
 
@@ -503,6 +604,9 @@ async function buildWordDocument(data) {
 }
 
 async function buildTripLogWordDocument(data) {
+  const destination = Array.isArray(data.destination)
+    ? data.destination.join(" → ")
+    : data.destination;
   const children = [
     new Paragraph({
       text: nonEmpty(data.title) ? data.title.trim() : "Bitácora de viaje",
@@ -516,7 +620,7 @@ async function buildTripLogWordDocument(data) {
       spacing: { after: 160 },
     }),
     ...[
-      wordText("Destino", data.destination),
+      wordText("Localidades del recorrido", destination),
       wordText("Fecha del viaje", data.travelDate),
       wordText("Casos de Salesforce", data.salesforceCases),
     ].filter(Boolean),

@@ -29,6 +29,19 @@ button { cursor: pointer; }
 .field-wide { grid-column: 1 / -1; }
 .field input, .field textarea { display: block; width: 100%; margin-top: 7px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #fcfcfe; outline: none; resize: vertical; transition: border .2s, box-shadow .2s; }
 .field input:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(84, 88, 232, .12); }
+.locality-dropdown { position: relative; margin-top: 7px; }
+.locality-dropdown summary { padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: #fcfcfe; cursor: pointer; font-weight: 500; list-style-position: inside; }
+.locality-dropdown[open] summary { border-color: var(--accent); border-radius: 9px 9px 0 0; }
+.locality-options { position: absolute; z-index: 2; top: 100%; right: 0; left: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 260px; overflow: auto; padding: 8px; border: 1px solid var(--accent); border-top: 0; border-radius: 0 0 9px 9px; background: white; box-shadow: 0 12px 24px rgba(31, 39, 65, .12); }
+.locality-option { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border-radius: 6px; color: var(--ink); cursor: pointer; font-size: .78rem; font-weight: 500; }
+.locality-option:hover { background: var(--soft); }
+.locality-option input { width: 15px; height: 15px; margin: 0; padding: 0; border: 0; border-radius: 3px; background: transparent; accent-color: var(--accent); }
+.locality-option input:focus { box-shadow: none; }
+.selected-localities { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.selected-locality { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: #fbfbfd; font-size: .78rem; }
+.locality-position { display: grid; flex: 0 0 22px; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--accent-dark); background: var(--soft); font-size: .7rem; font-weight: 800; }
+.selected-locality button { display: grid; place-items: center; margin-left: auto; padding: 4px; border: 0; color: #a0a7b5; background: transparent; }
+.selected-locality button:hover { color: #dc4545; }
 .steps-heading { align-items: center; margin-top: 32px; border-top: 1px solid var(--line); padding-top: 24px; }
 .steps-heading h2 { margin-bottom: 16px; }
 .steps-list { display: grid; gap: 12px; }

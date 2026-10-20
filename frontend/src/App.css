@@ -19,6 +19,9 @@ button { cursor: pointer; }
 .eyebrow, .section-label { color: #959aff; font-size: .72rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .workspace { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(380px, .85fr); gap: 24px; max-width: 1320px; margin: 0 auto; padding: 28px 24px 56px; }
 .panel { padding: 26px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 12px 30px rgba(31, 39, 65, .05); }
+.template-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; padding: 5px; border: 1px solid var(--line); border-radius: 11px; background: #f8f9fc; }
+.template-option { flex: 1; min-width: 150px; padding: 10px 14px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font-size: .84rem; font-weight: 750; }
+.template-option-active { color: var(--accent-dark); background: white; box-shadow: 0 2px 8px rgba(31, 39, 65, .1); }
 .panel-heading, .steps-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .panel-heading h2, .steps-heading h2 { margin: 5px 0 22px; font-size: 1.35rem; letter-spacing: -.02em; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

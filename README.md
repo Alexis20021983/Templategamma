@@ -1,8 +1,8 @@
-# QA Template Generator
+# Generador de templates
 
-QA Template Generator es una página estática para crear templates de casos de
-prueba sin servidor ni base de datos. Completa los datos generales y los pasos
-de ejecución para obtener una vista previa en tiempo real.
+Aplicación estática para crear templates de casos de prueba y bitácoras de
+viaje, sin servidor ni base de datos. Elige el tipo de template y completa sus
+datos para obtener una vista previa en tiempo real.
 
 ## Uso local
 
@@ -13,10 +13,10 @@ npm run dev
 ```
 
 La aplicación procesa todo en el navegador. Permite descargar el template
-generado como Word (`template-qa.docx`), Markdown (`template-qa.md`) o JSON
-(`template-qa.json`). También puedes adjuntar una o varias imágenes a cada paso;
-las imágenes se incrustan en el archivo Word. Ningún dato se envía ni se guarda
-en una base de datos.
+seleccionado como Word, Markdown o JSON. En los casos de prueba puedes adjuntar
+imágenes a cada paso; en la bitácora puedes cargar imágenes de los comprobantes
+de combustible. Las imágenes se incrustan en los archivos Word. Ningún dato se
+envía ni se guarda en una base de datos.
 
 ## Despliegue
 

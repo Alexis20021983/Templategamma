@@ -10,7 +10,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: #f5f6fa; color: var(--ink); }
-button, input, textarea { font: inherit; }
+button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 .app-shell { min-height: 100vh; }
 .hero { display: flex; justify-content: space-between; align-items: center; padding: 48px max(24px, calc((100% - 1320px) / 2)); color: white; background: linear-gradient(120deg, #22264d, #3f4287); }
@@ -27,8 +27,9 @@ button { cursor: pointer; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .field { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; }
 .field-wide { grid-column: 1 / -1; }
-.field input, .field textarea { display: block; width: 100%; margin-top: 7px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #fcfcfe; outline: none; resize: vertical; transition: border .2s, box-shadow .2s; }
-.field input:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(84, 88, 232, .12); }
+.field input, .field textarea, .field select { display: block; width: 100%; margin-top: 7px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #fcfcfe; outline: none; transition: border .2s, box-shadow .2s; }
+.field textarea { resize: vertical; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(84, 88, 232, .12); }
 .locality-dropdown { position: relative; margin-top: 7px; }
 .locality-dropdown summary { padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: #fcfcfe; cursor: pointer; font-weight: 500; list-style-position: inside; }
 .locality-dropdown[open] summary { border-color: var(--accent); border-radius: 9px 9px 0 0; }

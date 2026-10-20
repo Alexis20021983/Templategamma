@@ -46,6 +46,11 @@ const localities = [
   "Winifreda",
 ];
 
+const tripDescriptions = [
+  "Entrega de rollos",
+  "Entrega o retiro de equipamiento",
+];
+
 const initialStep = () => ({
   title: "",
   action: "",
@@ -77,7 +82,6 @@ const initialTripLog = {
   fuelReceiptNumber: "",
   fuelType: "",
   fuelLiters: "",
-  fuelAmount: "",
   fuelReceiptImages: [],
 };
 
@@ -248,7 +252,7 @@ function App() {
               />
               <Field label="Fecha del viaje" type="date" value={tripLog.travelDate} onChange={(value) => update("travelDate", value)} />
               <Field label="Casos de Salesforce" wide multiline value={tripLog.salesforceCases} onChange={(value) => update("salesforceCases", value)} placeholder="Números o detalles de los casos relacionados" />
-              <Field label="Descripción del viaje" wide multiline value={tripLog.travelDescription} onChange={(value) => update("travelDescription", value)} placeholder="Describe el motivo y los detalles del viaje" />
+              <Field label="Descripción" wide value={tripLog.travelDescription} onChange={(value) => update("travelDescription", value)} options={tripDescriptions} />
             </div>
             <div className="steps-heading">
               <div>
@@ -262,7 +266,6 @@ function App() {
               <Field label="Número de comprobante" value={tripLog.fuelReceiptNumber} onChange={(value) => update("fuelReceiptNumber", value)} placeholder="Número o código" />
               <Field label="Tipo de combustible" value={tripLog.fuelType} onChange={(value) => update("fuelType", value)} placeholder="Nafta, diésel..." />
               <Field label="Litros" type="number" value={tripLog.fuelLiters} onChange={(value) => update("fuelLiters", value)} placeholder="0" />
-              <Field label="Importe" type="number" value={tripLog.fuelAmount} onChange={(value) => update("fuelAmount", value)} placeholder="0,00" />
               <label className="image-picker field-wide">
                 <span><ImagePlus size={16} /> Cargar imagen del comprobante</span>
                 <input
@@ -361,7 +364,7 @@ function App() {
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", multiline = false, wide = false }) {
+function Field({ label, value, onChange, placeholder, type = "text", multiline = false, wide = false, options }) {
   const commonProps = {
     value,
     onChange: (event) => onChange(event.target.value),
@@ -370,7 +373,12 @@ function Field({ label, value, onChange, placeholder, type = "text", multiline =
   return (
     <label className={`field ${wide ? "field-wide" : ""}`}>
       <span>{label}</span>
-      {multiline ? <textarea {...commonProps} rows={3} /> : <input {...commonProps} type={type} />}
+      {options ? (
+        <select {...commonProps}>
+          <option value="">Selecciona una opción</option>
+          {options.map((option) => <option key={option} value={option}>{option}</option>)}
+        </select>
+      ) : multiline ? <textarea {...commonProps} rows={3} /> : <input {...commonProps} type={type} />}
     </label>
   );
 }
@@ -487,7 +495,6 @@ function buildTripLogMarkdown(data) {
 | Número de comprobante | ${value(data.fuelReceiptNumber)} |
 | Tipo de combustible | ${value(data.fuelType)} |
 | Litros | ${value(data.fuelLiters)} |
-| Importe | ${value(data.fuelAmount)} |
 
 ### Imágenes del comprobante
 ${receiptImages}
@@ -639,7 +646,6 @@ async function buildTripLogWordDocument(data) {
       wordText("Número de comprobante", data.fuelReceiptNumber),
       wordText("Tipo de combustible", data.fuelType),
       wordText("Litros", data.fuelLiters),
-      wordText("Importe", data.fuelAmount),
     ].filter(Boolean),
   ];
 

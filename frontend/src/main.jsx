@@ -70,6 +70,7 @@ const initialTripLog = {
   title: "Bitácora de viaje",
   destination: [],
   salesforceCases: "",
+  travelDescription: "",
   travelDate: "",
   fuelReceiptDate: "",
   fuelStation: "",
@@ -247,6 +248,7 @@ function App() {
               />
               <Field label="Fecha del viaje" type="date" value={tripLog.travelDate} onChange={(value) => update("travelDate", value)} />
               <Field label="Casos de Salesforce" wide multiline value={tripLog.salesforceCases} onChange={(value) => update("salesforceCases", value)} placeholder="Números o detalles de los casos relacionados" />
+              <Field label="Descripción del viaje" wide multiline value={tripLog.travelDescription} onChange={(value) => update("travelDescription", value)} placeholder="Describe el motivo y los detalles del viaje" />
             </div>
             <div className="steps-heading">
               <div>
@@ -474,6 +476,7 @@ function buildTripLogMarkdown(data) {
 | Localidades del recorrido | ${destination} |
 | Fecha del viaje | ${value(data.travelDate)} |
 | Casos de Salesforce | ${value(data.salesforceCases)} |
+| Descripción del viaje | ${value(data.travelDescription)} |
 
 ## Comprobante de combustible
 
@@ -623,6 +626,7 @@ async function buildTripLogWordDocument(data) {
       wordText("Localidades del recorrido", destination),
       wordText("Fecha del viaje", data.travelDate),
       wordText("Casos de Salesforce", data.salesforceCases),
+      wordText("Descripción del viaje", data.travelDescription),
     ].filter(Boolean),
     new Paragraph({
       text: "COMPROBANTE DE COMBUSTIBLE",
